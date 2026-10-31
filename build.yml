@@ -1,0 +1,39 @@
+name: Construire DofusAuto (Windows)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Tests automatiques de la reconnaissance
+        run: python tests/test_vision.py
+
+      - name: Compiler l'application
+        run: pyinstaller --noconfirm --onedir --windowed --name DofusAuto main.py
+
+      - name: Ajouter les images et la configuration à côté du .exe
+        shell: pwsh
+        run: |
+          Copy-Item -Recurse assets dist/DofusAuto/assets
+          Copy-Item config.json dist/DofusAuto/config.json
+          Copy-Item LISEZMOI.txt dist/DofusAuto/LISEZMOI.txt
+
+      - name: Publier le résultat
+        uses: actions/upload-artifact@v4
+        with:
+          name: DofusAuto-Windows
+          path: dist/DofusAuto
